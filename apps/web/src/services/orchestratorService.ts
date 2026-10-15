@@ -127,6 +127,8 @@ export function orchestrateModeExecution(
       const budget15kResult: ShoppingResultPayload = {
         id: 'shop-inr-15k',
         query,
+        provenance: 'mock',
+        isLivePricing: false,
         refinedQuery:
           'Active Noise Cancelling over-ear headphones under ₹15,000 in India: Sony WH-CH720N vs Anker Soundcore Space One vs Sennheiser Accentum (pricing, comfort & warranty)',
         comparisonSummary:
@@ -143,6 +145,9 @@ export function orchestrateModeExecution(
               'The Sony WH-CH720N incorporates the same Integrated Processor V1 found in the flagship XM5, offering unmatched mid-range ANC under ₹10,000.',
             freshness: 'Updated October 2025',
             isVerifiedDomain: true,
+            provenance: 'mock',
+            providerId: 'fixture_provider',
+            retrievalStatus: 'mocked',
           },
           {
             id: 'cit-shop-15k-2',
@@ -154,6 +159,9 @@ export function orchestrateModeExecution(
               'At 192 grams, the Sony CH720N is one of the lightest over-ear models tested, exerting only 0.8 lbs of clamping pressure.',
             freshness: 'Updated 3 weeks ago',
             isVerifiedDomain: true,
+            provenance: 'mock',
+            providerId: 'fixture_provider',
+            retrievalStatus: 'mocked',
           },
         ],
         products: [
@@ -161,6 +169,7 @@ export function orchestrateModeExecution(
             id: 'prod-sennheiser-accentum',
             name: 'Sennheiser Accentum Wireless ANC Headphones',
             brand: 'Sennheiser',
+            priceProvenance: 'static_sample',
             modelVariant: 'Accentum (Black / White)',
             specs: {
               'ANC Performance': 'Hybrid ANC with Wind Reduction',
@@ -232,6 +241,7 @@ export function orchestrateModeExecution(
             id: 'prod-sony-ch720n',
             name: 'Sony WH-CH720N Wireless Noise Cancelling Headphones',
             brand: 'Sony',
+            priceProvenance: 'static_sample',
             modelVariant: 'WH-CH720N (Black / Blue / White)',
             specs: {
               'ANC Performance': 'Integrated Processor V1 Dual-Sensor ANC',
@@ -300,6 +310,7 @@ export function orchestrateModeExecution(
             id: 'prod-soundcore-space-one',
             name: 'Anker Soundcore Space One ANC Headphones',
             brand: 'Anker Soundcore',
+            priceProvenance: 'static_sample',
             modelVariant: 'Space One (Jet Black / Latte Cream)',
             specs: {
               'ANC Performance': 'Adaptive ANC with 2x stronger voice reduction',
@@ -370,6 +381,8 @@ export function orchestrateModeExecution(
       const comparisonHeadphones: ShoppingResultPayload = {
         id: 'shop-xm5-vs-bose',
         query,
+        provenance: 'mock',
+        isLivePricing: false,
         refinedQuery:
           'Sony WH-1000XM5 vs Bose QuietComfort Ultra: head-to-head comparison on long-session comfort (clamping force, ear cushions) and structural durability (hinge stress, teardowns, warranty)',
         comparisonSummary:
@@ -386,6 +399,9 @@ export function orchestrateModeExecution(
               'Bose QC Ultra measured 1.1 lbs of clamping force with cast-aluminum folding hinges resisting 45Nm of torque, while Sony XM5 measured 1.2 lbs with stepless friction sliders without metal hinge brackets.',
             freshness: 'Updated October 2025',
             isVerifiedDomain: true,
+            provenance: 'mock',
+            providerId: 'fixture_provider',
+            retrievalStatus: 'mocked',
           },
           {
             id: 'cit-comp-2',
@@ -397,6 +413,9 @@ export function orchestrateModeExecution(
               'Bose protein-leather earcup cavities provide 18% greater depth than Sony XM5, preventing cartilage contact for users with prominent ears.',
             freshness: 'Published 2 months ago',
             isVerifiedDomain: true,
+            provenance: 'mock',
+            providerId: 'fixture_provider',
+            retrievalStatus: 'mocked',
           },
         ],
         products: [
@@ -404,6 +423,7 @@ export function orchestrateModeExecution(
             id: 'prod-bose-qc-ultra',
             name: 'Bose QuietComfort Ultra Wireless Headphones',
             brand: 'Bose',
+            priceProvenance: 'static_sample',
             modelVariant: 'QC Ultra (Black / White Smoke)',
             specs: {
               'Comfort Focus': 'Plush protein leather, 1.1 lbs low clamping force, deep earcup cavity',
@@ -652,7 +672,11 @@ While local execution provides absolute data sovereignty, it introduces strict f
       mode: 'entertainment',
       query,
       refinedQuery: intent.refinedQuery,
-      entertainmentResult: MOCK_ENTERTAINMENT_RESULTS.scifi,
+      entertainmentResult: {
+        ...MOCK_ENTERTAINMENT_RESULTS.scifi,
+        provenance: 'mock',
+        ratingsProvenance: 'static_sample',
+      },
     };
   }
 
@@ -665,8 +689,8 @@ While local execution provides absolute data sovereignty, it introduces strict f
         query,
         refinedQuery: 'real photographic images of Swiss Alps (Matterhorn peak, Lauterbrunnen valley, alpine lake reflections)',
         imageResults: [
-          MOCK_IMAGE_RESULTS.nature[0], // Matterhorn
-          MOCK_IMAGE_RESULTS.nature[1], // Piz Bernina
+          { ...MOCK_IMAGE_RESULTS.nature[0], provenance: 'static', providerId: 'unsplash_sample' },
+          { ...MOCK_IMAGE_RESULTS.nature[1], provenance: 'static', providerId: 'unsplash_sample' },
         ],
       };
     }
@@ -687,6 +711,8 @@ While local execution provides absolute data sovereignty, it introduces strict f
           mimeType: 'image/jpeg',
           verifiedSource: true,
           isAIGenerated: false,
+          provenance: 'static',
+          providerId: 'unsplash_sample',
         },
         {
           id: 'img-laptop-02',
@@ -701,6 +727,8 @@ While local execution provides absolute data sovereignty, it introduces strict f
           mimeType: 'image/jpeg',
           verifiedSource: true,
           isAIGenerated: false,
+          provenance: 'static',
+          providerId: 'unsplash_sample',
         },
       ];
 
@@ -716,7 +744,11 @@ While local execution provides absolute data sovereignty, it introduces strict f
       mode: 'images',
       query,
       refinedQuery: intent.refinedQuery,
-      imageResults: MOCK_IMAGE_RESULTS.nature,
+      imageResults: MOCK_IMAGE_RESULTS.nature.map((img) => ({
+        ...img,
+        provenance: 'static',
+        providerId: 'unsplash_sample',
+      })),
     };
   }
 
@@ -726,7 +758,11 @@ While local execution provides absolute data sovereignty, it introduces strict f
       mode: 'companion',
       query,
       refinedQuery: intent.refinedQuery,
-      remoteState: MOCK_REMOTE_STATE,
+      remoteState: {
+        ...MOCK_REMOTE_STATE,
+        connectionMode: 'unconnected',
+        diagnosticMessage: 'No local Antigravity session daemon active on localhost:5892. Real bridge requires running daemon.',
+      },
     };
   }
 
@@ -750,6 +786,10 @@ While local execution provides absolute data sovereignty, it introduces strict f
       mode: 'search',
       retrievalTimestamp: new Date().toISOString(),
       processingDurationMs: 380,
+      provenance: 'mock',
+      providerId: 'fixture_provider',
+      isLiveResult: false,
+      providerStatusMessage: 'Offline Sample Test Fixture',
       groundedAnswer: `A passkey is a digital credential built on the FIDO Alliance and W3C WebAuthn standards that completely replaces passwords with public-key cryptography [1]. When you create a passkey for an online service, your device generates a unique cryptographic key pair:
 - **Private Key**: Stored securely inside your device's hardware enclave (such as Apple Secure Enclave, Android StrongBox, or Windows Hello TPM) and never shared with the website or synced in unencrypted plaintext [1].
 - **Public Key**: Registered and stored by the website's server to verify signatures during future logins [2].
@@ -768,6 +808,9 @@ Passkeys can sync seamlessly across your personal ecosystem (via Apple iCloud Ke
             'Passkeys utilize public-key cryptography where the private key never leaves the client device enclave, removing all shared secrets from server databases.',
           freshness: 'Updated September 2025',
           isVerifiedDomain: true,
+          provenance: 'mock',
+          providerId: 'fixture_provider',
+          retrievalStatus: 'mocked',
         },
         {
           id: 'cit-pk-2',
@@ -779,6 +822,9 @@ Passkeys can sync seamlessly across your personal ecosystem (via Apple iCloud Ke
             'Cryptographic signatures are strictly bound to the origin domain header verified by the user agent, rendering credential phishing mathematically impossible.',
           freshness: 'Standards Track 2025',
           isVerifiedDomain: true,
+          provenance: 'mock',
+          providerId: 'fixture_provider',
+          retrievalStatus: 'mocked',
         },
         {
           id: 'cit-pk-3',
@@ -790,6 +836,9 @@ Passkeys can sync seamlessly across your personal ecosystem (via Apple iCloud Ke
             'Organizations migrating to passkeys experienced a 100% reduction in automated credential stuffing and phishing takeovers compared to legacy SMS/TOTP MFA.',
           freshness: 'Published 4 months ago',
           isVerifiedDomain: true,
+          provenance: 'mock',
+          providerId: 'fixture_provider',
+          retrievalStatus: 'mocked',
         },
         {
           id: 'cit-pk-4',
@@ -801,6 +850,9 @@ Passkeys can sync seamlessly across your personal ecosystem (via Apple iCloud Ke
             'Passkeys synchronize end-to-end encrypted through iCloud Keychain and allow cross-platform authentication using FIDO Cross-Device Authentication (CAVP).',
           freshness: 'Updated August 2025',
           isVerifiedDomain: true,
+          provenance: 'mock',
+          providerId: 'fixture_provider',
+          retrievalStatus: 'mocked',
         },
       ],
       evidenceList: [
@@ -852,6 +904,10 @@ Passkeys can sync seamlessly across your personal ecosystem (via Apple iCloud Ke
     refinedQuery: intent.refinedQuery,
     mode: 'search',
     retrievalTimestamp: new Date().toISOString(),
+    provenance: 'mock',
+    providerId: 'fixture_provider',
+    isLiveResult: false,
+    providerStatusMessage: 'Offline Sample Test Fixture',
     groundedAnswer: `Grounded synthesis for inquiry: "${query}".
 
 Based on verified web documentation and standards, this query relates to established best practices in technology and software architecture [1]. The core principles prioritize explicit cryptographic boundaries, verified telemetry auditing, and transparent data lifecycle controls [2].
@@ -868,6 +924,9 @@ When evaluating implementation alternatives, prioritize standards-compliant prot
           'Standards-compliant specifications define rigorous protocol constraints to guarantee cross-vendor interoperability and verifiable data safety.',
         freshness: 'Verified 2 weeks ago',
         isVerifiedDomain: true,
+        provenance: 'mock',
+        providerId: 'fixture_provider',
+        retrievalStatus: 'mocked',
       },
       {
         id: 'cit-gen-2',
@@ -879,6 +938,9 @@ When evaluating implementation alternatives, prioritize standards-compliant prot
           'Systems maintaining client-side verification and zero unconsented telemetry demonstrate superior resistance to third-party data breaches.',
         freshness: 'Updated 1 month ago',
         isVerifiedDomain: true,
+        provenance: 'mock',
+        providerId: 'fixture_provider',
+        retrievalStatus: 'mocked',
       },
       {
         id: 'cit-gen-3',
@@ -890,6 +952,9 @@ When evaluating implementation alternatives, prioritize standards-compliant prot
           'Recent empirical analysis highlights the necessity of verifiable attestation when routing requests across hybrid multi-mode environments.',
         freshness: 'Published 3 months ago',
         isVerifiedDomain: true,
+        provenance: 'mock',
+        providerId: 'fixture_provider',
+        retrievalStatus: 'mocked',
       },
     ],
     evidenceList: [

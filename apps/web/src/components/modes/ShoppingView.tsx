@@ -67,9 +67,14 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({ data }) => {
               </span>
             </div>
           </div>
-          <span className="text-[10px] font-mono px-2.5 py-1 rounded-full liquid-pill self-start sm:self-center">
-            Zero Sponsored Placements
-          </span>
+          <div className="flex items-center gap-2 flex-wrap self-start sm:self-center">
+            <span className="text-[10px] font-mono px-2.5 py-1 rounded-full liquid-pill">
+              Zero Sponsored Placements
+            </span>
+            <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+              {data.isLivePricing ? 'Live Retailer Verification' : 'Reference Catalog (Unverified Live Quote)'}
+            </span>
+          </div>
         </div>
 
         <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">

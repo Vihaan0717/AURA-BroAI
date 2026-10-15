@@ -20,6 +20,7 @@ export const RemoteCompanionView: React.FC = () => {
     remoteState,
     connectRemoteCompanion,
     disconnectRemoteCompanion,
+    enableSimulatedCompanionDemo,
     triggerRemoteAction,
   } = useBrowser();
 
@@ -28,6 +29,7 @@ export const RemoteCompanionView: React.FC = () => {
 
   const isConnected = remoteState.status === 'connected';
   const isPairing = remoteState.status === 'pairing';
+  const isSimulated = remoteState.connectionMode === 'simulated';
 
   const handleStartSession = async () => {
     await connectRemoteCompanion();
@@ -59,30 +61,32 @@ export const RemoteCompanionView: React.FC = () => {
               <Laptop className="w-6 h-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
                   Google Antigravity & Personal Device Bridge
                 </h2>
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase ${
                     isConnected
-                      ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30'
+                      ? isSimulated
+                        ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30'
+                        : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30'
                       : isPairing
                       ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 animate-pulse'
                       : 'bg-black/5 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 border border-black/10 dark:border-white/10'
                   }`}
                 >
-                  {remoteState.status}
+                  {isConnected ? (isSimulated ? 'Simulated Demo' : 'Live Daemon') : remoteState.status}
                 </span>
               </div>
               <p className="text-xs text-zinc-600 dark:text-zinc-300 mt-1 leading-relaxed">
-                Official Antigravity Remote Control workflow • Secure TLS WebSocket bridge
+                Official Antigravity Remote Control workflow • Strictly verified 127.0.0.1:5892 local daemon probe
               </p>
             </div>
           </div>
 
           {/* Session Start / Stop Buttons */}
-          <div className="flex items-center gap-2 self-start sm:self-center">
+          <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
             {isConnected ? (
               <button
                 onClick={handleStopSession}
@@ -92,26 +96,44 @@ export const RemoteCompanionView: React.FC = () => {
                 <span>Stop Session</span>
               </button>
             ) : (
-              <button
-                onClick={handleStartSession}
-                disabled={isPairing}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-xs font-semibold transition-all shadow-md active:scale-95"
-              >
-                {isPairing ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Pairing Device...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>Start Remote Session</span>
-                  </>
-                )}
-              </button>
+              <>
+                <button
+                  onClick={handleStartSession}
+                  disabled={isPairing}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-xs font-semibold transition-all shadow-md active:scale-95"
+                  title="Probe localhost:5892 for active Antigravity session daemon"
+                >
+                  {isPairing ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Probing Port 5892...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Probe Local Daemon</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={enableSimulatedCompanionDemo}
+                  disabled={isPairing}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl liquid-pill text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-all"
+                  title="Walk through the remote companion UI without a running daemon"
+                >
+                  <span>Simulate Demo</span>
+                </button>
+              </>
             )}
           </div>
         </div>
+
+        {/* Diagnostic Status Message */}
+        {remoteState.diagnosticMessage && (
+          <div className="p-3 mb-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
+            {remoteState.diagnosticMessage}
+          </div>
+        )}
 
         {/* Device Information Panel */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">

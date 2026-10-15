@@ -33,12 +33,12 @@ export const ImagesView: React.FC<ImagesViewProps> = ({ images }) => {
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                 Web-Sourced Image Search
               </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
-                100% Permitted Web Sources
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+                Curated Photographic References (Unsplash License)
               </span>
             </div>
             <p className="text-xs text-zinc-600 dark:text-zinc-300 mt-1 leading-relaxed">
-              Strict privacy rule: Images are retrieved from verified public photographic databases. No AI generator, neural synth, or synthetic placeholders are used.
+              Source disclosure: Live image search provider not configured. Displaying curated reference photographs with verified creator attributions and direct page links.
             </p>
           </div>
         </div>

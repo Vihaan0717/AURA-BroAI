@@ -35,6 +35,9 @@ export const EntertainmentView: React.FC<EntertainmentViewProps> = ({ item }) =>
               <span className="text-xs px-2.5 py-0.5 rounded-md liquid-pill text-zinc-700 dark:text-zinc-300">
                 {item.releaseStatus === 'released' ? 'Available on Streaming & Theatrical' : item.releaseStatus}
               </span>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25 font-mono">
+                {item.ratingsProvenance === 'verified_api' ? 'Verified Live Ratings' : 'Curated Reference Catalog (Unverified Live Ratings)'}
+              </span>
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">

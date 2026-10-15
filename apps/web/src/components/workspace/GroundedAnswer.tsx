@@ -53,11 +53,26 @@ export const GroundedAnswer: React.FC<GroundedAnswerProps> = ({
     <article className="liquid-card rounded-3xl p-6 sm:p-7">
       {/* Header Bar */}
       <div className="flex items-center justify-between pb-3.5 mb-5 border-b border-black/5 dark:border-white/5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse-subtle" />
           <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
             Grounded Research Synthesis
           </h2>
+          {result.provenance === 'live' && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+              Live Web ({result.citations.length} Sources)
+            </span>
+          )}
+          {result.provenance === 'cached' && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-800 dark:text-blue-300 border border-blue-500/30">
+              Cached Snapshot
+            </span>
+          )}
+          {result.provenance === 'mock' && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+              Sample Fixture (Offline)
+            </span>
+          )}
         </div>
 
         {/* Pin to Memory Button */}

@@ -143,6 +143,7 @@ export const MOCK_SHOPPING_RESULTS: Record<string, ShoppingResultPayload> = {
         id: 'prod-sony-xm5',
         name: 'Sony WH-1000XM5 Wireless Noise Cancelling Headphones',
         brand: 'Sony',
+        priceProvenance: 'static_sample',
         modelVariant: 'WH-1000XM5 (Black / Silver)',
         specs: {
           'ANC Performance': 'Dual processor V1 + QN1 with 8 microphones',
@@ -226,6 +227,7 @@ export const MOCK_SHOPPING_RESULTS: Record<string, ShoppingResultPayload> = {
         id: 'prod-sennheiser-m4',
         name: 'Sennheiser Momentum 4 Wireless',
         brand: 'Sennheiser',
+        priceProvenance: 'static_sample',
         modelVariant: 'Momentum 4 (Graphite Edition)',
         specs: {
           'ANC Performance': 'Adaptive Hybrid ANC with Transparency',

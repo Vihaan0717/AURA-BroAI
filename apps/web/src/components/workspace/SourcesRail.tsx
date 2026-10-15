@@ -53,9 +53,24 @@ export const SourcesRail: React.FC<SourcesRailProps> = ({
                   >
                     {source.index}
                   </span>
-                  <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 font-mono truncate max-w-[140px]">
+                  <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 font-mono truncate max-w-[130px]">
                     {source.domain}
                   </span>
+                  {source.provenance === 'live' && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/25">
+                      Live
+                    </span>
+                  )}
+                  {source.provenance === 'cached' && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-blue-500/15 text-blue-800 dark:text-blue-300 border border-blue-500/25">
+                      Cached
+                    </span>
+                  )}
+                  {source.provenance === 'mock' && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25">
+                      Fixture
+                    </span>
+                  )}
                   {source.isVerifiedDomain && (
                     <span title="Verified authoritative domain">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />

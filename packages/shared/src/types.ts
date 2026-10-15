@@ -15,6 +15,8 @@ export type SearchMode =
 
 export type EvidenceType = 'fact' | 'opinion' | 'estimate' | 'inference';
 
+export type SourceProvenanceType = 'live' | 'cached' | 'static' | 'mock' | 'unavailable';
+
 export interface SourceCitation {
   id: string;
   index: number;
@@ -24,6 +26,14 @@ export interface SourceCitation {
   snippet: string;
   freshness?: string;
   isVerifiedDomain?: boolean;
+  provenance?: SourceProvenanceType;
+  retrievalTimestamp?: string;
+  publishedDate?: string;
+  providerId?: string;
+  retrievalStatus?: 'success' | 'failed' | 'timeout' | 'cached' | 'mocked';
+  contentType?: string;
+  attribution?: string;
+  license?: string;
 }
 
 export interface EvidenceSummary {
@@ -142,6 +152,15 @@ export interface SearchResultPayload {
   retrievalTimestamp: string;
   processingDurationMs: number;
   deepResearchReport?: DeepResearchReport;
+  provenance?: SourceProvenanceType;
+  providerId?: string;
+  providerStatusMessage?: string;
+  isLiveResult?: boolean;
+  cacheMetadata?: {
+    cachedAt: string;
+    ttlSeconds: number;
+    isStale: boolean;
+  };
 }
 
 // Shopping Domain Types
@@ -181,6 +200,7 @@ export interface ProductAttributeComparison {
     evidenceBasis: DurabilityEvidenceBasis;
     explanation: string;
   };
+  priceProvenance?: 'live_quote' | 'static_sample' | 'unverified';
   reviewRiskSignals?: string[];
   recommendationBreakdown: {
     whyItMatches: string;
@@ -202,6 +222,8 @@ export interface ShoppingResultPayload {
   citations: SourceCitation[];
   extractedConstraints?: ExtractedConstraints;
   contextualNote?: string;
+  provenance?: SourceProvenanceType;
+  isLivePricing?: boolean;
 }
 
 // Entertainment Domain Types
@@ -239,6 +261,8 @@ export interface EntertainmentItem {
     url: string;
     verifiedOfficial: boolean;
   }[];
+  provenance?: SourceProvenanceType;
+  ratingsProvenance?: 'verified_api' | 'static_sample' | 'unverified';
 }
 
 // Image Search Types (Strictly Real Web Sources, No AI Generation)
@@ -258,6 +282,8 @@ export interface ImageSearchResult {
   mimeType?: string;
   verifiedSource: boolean;
   isAIGenerated: false; // Explicitly enforce never AI-generated
+  provenance?: SourceProvenanceType;
+  providerId?: string;
 }
 
 // AI Chat & Memory Types
@@ -292,6 +318,8 @@ export type ConnectionStatus = 'disconnected' | 'pairing' | 'connected' | 'error
 
 export interface RemoteCompanionState {
   status: ConnectionStatus;
+  connectionMode?: 'real_socket' | 'unconnected' | 'simulated';
+  diagnosticMessage?: string;
   targetDevice: {
     name: string;
     platform: 'Windows 11' | 'Windows 10' | 'macOS' | 'Linux';

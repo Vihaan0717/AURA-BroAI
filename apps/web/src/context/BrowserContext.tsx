@@ -60,6 +60,7 @@ interface BrowserContextValue {
   purgeAllAccountData: () => void;
   connectRemoteCompanion: () => Promise<void>;
   disconnectRemoteCompanion: () => void;
+  enableSimulatedCompanionDemo: () => void;
   triggerRemoteAction: (actionName: string) => void;
 }
 
@@ -139,8 +140,34 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Transition view to results workspace
     setView('results');
 
-    // Simulate genuine network & reasoning latency (500ms)
-    setTimeout(() => {
+    // Asynchronously execute retrieval pipeline
+    (async () => {
+      let liveSearchResult: SearchResultPayload | null = null;
+
+      // In General Search mode, query the live backend search API if reachable
+      if (effectiveMode === 'search') {
+        try {
+          const res = await fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: targetQuery,
+              mode: effectiveMode,
+              constraints: routedIntent.preservedConstraints,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.payload) {
+              liveSearchResult = data.payload;
+            }
+          }
+        } catch {
+          // If backend API is not running or unreachable, fall back to local orchestrator below
+        }
+      }
+
+      // If live backend search succeeded, use it; otherwise run deterministic local orchestrator
       const outcome = orchestrateModeExecution(targetQuery, routedIntent, effectiveMode, {
         lastMode: conversationContext.lastMode,
         lastQuery: conversationContext.lastQuery,
@@ -153,8 +180,8 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setContinuationNotice(null);
       }
 
-      // Update mode results
-      setSearchResult(outcome.searchResult || null);
+      // Update mode results (preferring live result for general search if retrieved)
+      setSearchResult(liveSearchResult || outcome.searchResult || null);
       setDeepResearchResult(outcome.deepResearchResult || null);
       setShoppingResult(outcome.shoppingResult || null);
       setEntertainmentResult(outcome.entertainmentResult || null);
@@ -173,7 +200,7 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
 
       setIsLoading(false);
-    }, 500);
+    })();
   };
 
   /**
@@ -344,19 +371,83 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setView('home');
   };
 
-  // Remote Companion Actions
+  // Remote Companion Actions: Strict truthfulness, honest socket detection
   const connectRemoteCompanion = async () => {
     setRemoteState((prev) => ({ ...prev, status: 'pairing' }));
-    await new Promise((r) => setTimeout(r, 1000));
+
+    try {
+      const probeRes = await fetch('/api/companion/status', { signal: AbortSignal.timeout(3000) });
+      if (probeRes.ok) {
+        const probeData = await probeRes.json();
+        if (probeData.isDaemonRunning) {
+          setRemoteState((prev) => ({
+            ...prev,
+            status: 'connected',
+            connectionMode: 'real_socket',
+            activeSessionId: `antigravity-ses-LIVE`,
+            sessionStartedAt: new Date().toISOString(),
+            diagnosticMessage: 'Connected to active local Antigravity desktop bridge on 127.0.0.1:5892',
+            auditLogs: [
+              {
+                timestamp: new Date().toLocaleTimeString(),
+                action: 'Verified live TCP socket connection to Google Antigravity Session on 127.0.0.1:5892',
+                status: 'completed',
+              },
+              ...prev.auditLogs,
+            ],
+          }));
+          return;
+        } else {
+          setRemoteState((prev) => ({
+            ...prev,
+            status: 'disconnected',
+            connectionMode: 'unconnected',
+            diagnosticMessage: probeData.diagnosticMessage || 'No local Antigravity session daemon active on localhost:5892.',
+            auditLogs: [
+              {
+                timestamp: new Date().toLocaleTimeString(),
+                action: 'Probe result: Port 5892 closed (ECONNREFUSED). Real bridge requires running daemon.',
+                status: 'rejected',
+              },
+              ...prev.auditLogs,
+            ],
+          }));
+          return;
+        }
+      }
+    } catch {
+      // API unreachable or probe failed
+    }
+
+    // Default honest response when no daemon is listening
     setRemoteState((prev) => ({
       ...prev,
-      status: 'connected',
-      activeSessionId: `antigravity-ses-AGY902`,
-      sessionStartedAt: new Date().toISOString(),
+      status: 'disconnected',
+      connectionMode: 'unconnected',
+      diagnosticMessage: 'No local Antigravity session daemon active on localhost:5892. Real bridge requires running desktop daemon.',
       auditLogs: [
         {
           timestamp: new Date().toLocaleTimeString(),
-          action: 'Secure TLS WebSocket established with Google Antigravity Session on localhost:5892',
+          action: 'Probe result: Port 5892 closed. No local Antigravity session daemon detected.',
+          status: 'rejected',
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+  };
+
+  const enableSimulatedCompanionDemo = () => {
+    setRemoteState((prev) => ({
+      ...prev,
+      status: 'connected',
+      connectionMode: 'simulated',
+      activeSessionId: 'antigravity-sim-DEMO',
+      sessionStartedAt: new Date().toISOString(),
+      diagnosticMessage: 'SIMULATED DEMO: Displaying interface walkthrough with mock telemetry (no live port active).',
+      auditLogs: [
+        {
+          timestamp: new Date().toLocaleTimeString(),
+          action: '[SIMULATED DEMO] Pairing simulated for UI evaluation. No actual localhost:5892 socket opened.',
           status: 'completed',
         },
         ...prev.auditLogs,
@@ -435,6 +526,7 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
         purgeAllAccountData,
         connectRemoteCompanion,
         disconnectRemoteCompanion,
+        enableSimulatedCompanionDemo,
         triggerRemoteAction,
       }}
     >
