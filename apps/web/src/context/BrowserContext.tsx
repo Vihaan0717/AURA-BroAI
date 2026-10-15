@@ -11,6 +11,7 @@ import {
   ChatSession,
   QueryIntent,
   DeepResearchReport,
+  SourceCitation,
 } from '@private-browser/shared';
 import {
   MOCK_INITIAL_CHAT_SESSIONS,
@@ -143,8 +144,13 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Asynchronously execute retrieval pipeline
     (async () => {
       let liveSearchResult: SearchResultPayload | null = null;
+      let liveImageResult: ImageSearchResult[] | null = null;
+      let liveShoppingResult: ShoppingResultPayload | null = null;
+      let liveEntertainmentResult: EntertainmentItem | null = null;
+      let liveEntertainmentCitations: SourceCitation[] | null = null;
+      let liveDeepResearchResult: DeepResearchReport | null = null;
 
-      // In General Search mode, query the live backend search API if reachable
+      // 1. General Search mode live API call
       if (effectiveMode === 'search') {
         try {
           const res = await fetch('/api/search', {
@@ -167,6 +173,95 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       }
 
+      // 2. Images Only mode live API call (Wikimedia Commons Open Archive)
+      if (effectiveMode === 'images') {
+        try {
+          const res = await fetch('/api/images', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: targetQuery,
+              maxResults: 6,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && Array.isArray(data.images)) {
+              liveImageResult = data.images;
+            }
+          }
+        } catch {
+          // Fall back to deterministic test fixtures
+        }
+      }
+
+      // 3. Shopping Research mode live API call
+      if (effectiveMode === 'shopping') {
+        try {
+          const res = await fetch('/api/shopping', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: targetQuery,
+              constraints: routedIntent.preservedConstraints,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.payload) {
+              liveShoppingResult = data.payload;
+            }
+          }
+        } catch {
+          // Fall back to local orchestrator
+        }
+      }
+
+      // 4. Entertainment Research mode live API call
+      if (effectiveMode === 'entertainment') {
+        try {
+          const res = await fetch('/api/entertainment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: targetQuery,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.payload) {
+              liveEntertainmentResult = data.payload;
+              if (data.citations) {
+                liveEntertainmentCitations = data.citations;
+              }
+            }
+          }
+        } catch {
+          // Fall back to local orchestrator
+        }
+      }
+
+      // 5. Deep Research mode live API call
+      if (effectiveMode === 'deep_research') {
+        try {
+          const res = await fetch('/api/deep-research', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: targetQuery,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.report) {
+              liveDeepResearchResult = data.report;
+            }
+          }
+        } catch {
+          // Fall back to local orchestrator
+        }
+      }
+
       // If live backend search succeeded, use it; otherwise run deterministic local orchestrator
       const outcome = orchestrateModeExecution(targetQuery, routedIntent, effectiveMode, {
         lastMode: conversationContext.lastMode,
@@ -180,12 +275,32 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setContinuationNotice(null);
       }
 
-      // Update mode results (preferring live result for general search if retrieved)
-      setSearchResult(liveSearchResult || outcome.searchResult || null);
-      setDeepResearchResult(outcome.deepResearchResult || null);
-      setShoppingResult(outcome.shoppingResult || null);
-      setEntertainmentResult(outcome.entertainmentResult || null);
-      setImageResults(outcome.imageResults || null);
+      // Update mode results (preferring live result for each mode if retrieved)
+      setSearchResult(
+        liveSearchResult ||
+          (liveEntertainmentCitations
+            ? {
+                ...(outcome.searchResult || {
+                  id: `res-${Date.now()}`,
+                  query: targetQuery,
+                  refinedQuery: targetQuery,
+                  mode: effectiveMode,
+                  groundedAnswer: '',
+                  citations: liveEntertainmentCitations,
+                  evidenceList: [],
+                  followUpSuggestions: [],
+                  retrievalTimestamp: new Date().toISOString(),
+                  processingDurationMs: 0,
+                }),
+                citations: liveEntertainmentCitations,
+              }
+            : outcome.searchResult) ||
+          null
+      );
+      setDeepResearchResult(liveDeepResearchResult || outcome.deepResearchResult || null);
+      setShoppingResult(liveShoppingResult || outcome.shoppingResult || null);
+      setEntertainmentResult(liveEntertainmentResult || outcome.entertainmentResult || null);
+      setImageResults(liveImageResult !== null ? liveImageResult : outcome.imageResults || null);
 
       if (outcome.remoteState) {
         setRemoteState(outcome.remoteState);

@@ -332,6 +332,43 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({ data }) => {
               </div>
             </div>
           </div>
+
+          {/* Supporting Citations / Source Verification Section */}
+          {data.citations && data.citations.length > 0 && (
+            <div className="liquid-card rounded-3xl p-6 sm:p-7 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  Verified Supporting Sources & Original URLs ({data.citations.length})
+                </h4>
+                <span className="text-[10px] font-mono text-zinc-500">Grounded Retail & Testing Provenance</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {data.citations.map((src) => (
+                  <a
+                    key={src.id}
+                    href={src.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3.5 rounded-2xl liquid-pill text-xs flex flex-col justify-between hover:border-emerald-500/40 transition-all group"
+                  >
+                    <div>
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                        {src.title}
+                      </span>
+                      <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2">
+                        {src.snippet}
+                      </p>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[10px] font-mono text-zinc-500">
+                      <span>{src.domain}</span>
+                      <ExternalLink className="w-3 h-3 text-zinc-400 group-hover:text-emerald-600" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

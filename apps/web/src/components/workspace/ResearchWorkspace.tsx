@@ -203,7 +203,7 @@ export const ResearchWorkspace: React.FC = () => {
           )}
 
           {mode === 'entertainment' && entertainmentResult && (
-            <EntertainmentView item={entertainmentResult} />
+            <EntertainmentView item={entertainmentResult} citations={searchResult?.citations} />
           )}
 
           {mode === 'images' && (

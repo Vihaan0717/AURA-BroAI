@@ -156,6 +156,9 @@ export interface SearchResultPayload {
   providerId?: string;
   providerStatusMessage?: string;
   isLiveResult?: boolean;
+  isAiGenerated?: boolean;
+  modelUsed?: string;
+  answerDisclaimer?: string;
   cacheMetadata?: {
     cachedAt: string;
     ttlSeconds: number;

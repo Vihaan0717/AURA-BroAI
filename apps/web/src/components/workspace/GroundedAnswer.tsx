@@ -73,6 +73,16 @@ export const GroundedAnswer: React.FC<GroundedAnswerProps> = ({
               Sample Fixture (Offline)
             </span>
           )}
+          {result.isAiGenerated && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-800 dark:text-purple-300 border border-purple-500/30">
+              AI Synthesized ({result.modelUsed})
+            </span>
+          )}
+          {result.modelUsed === 'direct_source_extractor' && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-500/15 text-zinc-800 dark:text-zinc-300 border border-zinc-500/30">
+              Direct Source Extraction (No LLM Key)
+            </span>
+          )}
         </div>
 
         {/* Pin to Memory Button */}

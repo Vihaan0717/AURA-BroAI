@@ -1,13 +1,25 @@
 import * as http from 'node:http';
 import { URL } from 'node:url';
-import { SearchResultPayload, SourceCitation } from '@private-browser/shared';
+import {
+  SearchResultPayload,
+  SourceCitation,
+  ImageSearchResult,
+  ShoppingResultPayload,
+  EntertainmentItem,
+  DeepResearchReport,
+  SourceProvenanceType,
+} from '@private-browser/shared';
 import { DuckDuckGoProvider } from './providers/DuckDuckGoProvider.js';
 import { TavilyProvider } from './providers/TavilyProvider.js';
 import { MockProvider } from './providers/MockProvider.js';
 import { SearchProvider } from './providers/SearchProvider.js';
+import { WikimediaImageProvider } from './providers/WikimediaImageProvider.js';
 import { CacheService } from './services/CacheService.js';
 import { AnswerGenerator } from './services/AnswerGenerator.js';
 import { CompanionProbe } from './services/CompanionProbe.js';
+import { ShoppingResearchOrchestrator } from './services/ShoppingResearchOrchestrator.js';
+import { EntertainmentResearchOrchestrator } from './services/EntertainmentResearchOrchestrator.js';
+import { DeepResearchOrchestrator } from './services/DeepResearchOrchestrator.js';
 import { SearchApiRequest, SearchApiResponse } from './types.js';
 
 export class ApiServer {
@@ -15,6 +27,10 @@ export class ApiServer {
   private cacheService: CacheService;
   private answerGenerator: AnswerGenerator;
   private companionProbe: CompanionProbe;
+  private wikimediaImageProvider: WikimediaImageProvider;
+  private shoppingOrchestrator: ShoppingResearchOrchestrator;
+  private entertainmentOrchestrator: EntertainmentResearchOrchestrator;
+  private deepResearchOrchestrator: DeepResearchOrchestrator;
   private providers: Map<string, SearchProvider> = new Map();
 
   // Rate limiter map: IP -> timestamps
@@ -26,6 +42,7 @@ export class ApiServer {
     this.cacheService = new CacheService(900); // 15 minutes TTL
     this.answerGenerator = new AnswerGenerator();
     this.companionProbe = new CompanionProbe();
+    this.wikimediaImageProvider = new WikimediaImageProvider();
 
     // Register search providers
     const ddg = new DuckDuckGoProvider();
@@ -35,6 +52,10 @@ export class ApiServer {
     this.providers.set(ddg.id, ddg);
     this.providers.set(tavily.id, tavily);
     this.providers.set(mock.id, mock);
+
+    this.shoppingOrchestrator = new ShoppingResearchOrchestrator(ddg);
+    this.entertainmentOrchestrator = new EntertainmentResearchOrchestrator(ddg);
+    this.deepResearchOrchestrator = new DeepResearchOrchestrator(ddg);
 
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
   }
@@ -226,6 +247,9 @@ export class ApiServer {
           provenance: resultProvenance,
           providerId: usedProviderId,
           isLiveResult: resultProvenance === 'live',
+          isAiGenerated: answerResponse.isAiGenerated,
+          modelUsed: answerResponse.modelUsed,
+          answerDisclaimer: answerResponse.disclaimer,
           providerStatusMessage:
             resultProvenance === 'live'
               ? `Live retrieval via ${usedProviderId === 'duckduckgo' ? 'DuckDuckGo Open Web' : usedProviderId}`
@@ -250,7 +274,224 @@ export class ApiServer {
         return;
       }
 
-      // 3. Companion Status Probe (Honest socket detection on localhost:5892)
+      // 3. Live Images Only Search Endpoint (Wikimedia Commons Open Archive)
+      if (req.method === 'POST' && pathname === '/api/images') {
+        const body = await this.parseJsonBody<{ query?: string; maxResults?: number; forceLive?: boolean }>(req);
+        const query = body.query?.trim();
+
+        if (!query) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing query parameter' }));
+          return;
+        }
+
+        const startTime = Date.now();
+        let images: ImageSearchResult[] = [];
+        let isFromCache = false;
+
+        if (!body.forceLive) {
+          const cached = this.cacheService.getGeneric<ImageSearchResult[]>(query, 'images');
+          if (cached) {
+            images = cached.data;
+            isFromCache = true;
+          }
+        }
+
+        if (!isFromCache) {
+          images = await this.wikimediaImageProvider.searchImages(query, { maxResults: body.maxResults || 4 });
+          if (images.length > 0) {
+            this.cacheService.setGeneric(query, 'images', images);
+          }
+        }
+
+        const durationMs = Date.now() - startTime;
+        const provenance: SourceProvenanceType = isFromCache
+          ? 'cached'
+          : images.length > 0
+          ? 'live'
+          : 'unavailable';
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            success: true,
+            images,
+            provenance,
+            providerId: 'wikimedia_commons',
+            durationMs,
+          })
+        );
+        return;
+      }
+
+      // 4. Live Shopping Research Endpoint
+      if (req.method === 'POST' && pathname === '/api/shopping') {
+        const body = await this.parseJsonBody<{ query?: string; constraints?: any; forceLive?: boolean }>(req);
+        const query = body.query?.trim();
+
+        if (!query) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing query parameter' }));
+          return;
+        }
+
+        const startTime = Date.now();
+        let payload: ShoppingResultPayload | null = null;
+        let citations: SourceCitation[] = [];
+        let isFromCache = false;
+
+        if (!body.forceLive) {
+          const cached = this.cacheService.getGeneric<{ payload: ShoppingResultPayload; citations: SourceCitation[] }>(
+            query,
+            'shopping'
+          );
+          if (cached) {
+            payload = cached.data.payload;
+            citations = cached.data.citations;
+            isFromCache = true;
+          }
+        }
+
+        if (!isFromCache) {
+          const result = await this.shoppingOrchestrator.conductResearch(query, body.constraints);
+          payload = result.payload;
+          citations = result.citations;
+          if (payload && citations.length > 0) {
+            this.cacheService.setGeneric(query, 'shopping', { payload, citations });
+          }
+        }
+
+        const durationMs = Date.now() - startTime;
+        const provenance: SourceProvenanceType = isFromCache
+          ? 'cached'
+          : payload?.provenance || 'unavailable';
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            success: true,
+            payload,
+            citations,
+            provenance,
+            durationMs,
+          })
+        );
+        return;
+      }
+
+      // 5. Live Entertainment Research Endpoint
+      if (req.method === 'POST' && pathname === '/api/entertainment') {
+        const body = await this.parseJsonBody<{ query?: string; forceLive?: boolean }>(req);
+        const query = body.query?.trim();
+
+        if (!query) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing query parameter' }));
+          return;
+        }
+
+        const startTime = Date.now();
+        let payload: EntertainmentItem | null = null;
+        let citations: SourceCitation[] = [];
+        let isFromCache = false;
+
+        if (!body.forceLive) {
+          const cached = this.cacheService.getGeneric<{ payload: EntertainmentItem; citations: SourceCitation[] }>(
+            query,
+            'entertainment'
+          );
+          if (cached) {
+            payload = cached.data.payload;
+            citations = cached.data.citations;
+            isFromCache = true;
+          }
+        }
+
+        if (!isFromCache) {
+          const result = await this.entertainmentOrchestrator.conductResearch(query);
+          payload = result.payload;
+          citations = result.citations;
+          if (payload && citations.length > 0) {
+            this.cacheService.setGeneric(query, 'entertainment', { payload, citations });
+          }
+        }
+
+        const durationMs = Date.now() - startTime;
+        const provenance: SourceProvenanceType = isFromCache
+          ? 'cached'
+          : payload?.provenance || 'unavailable';
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            success: true,
+            payload,
+            citations,
+            provenance,
+            durationMs,
+          })
+        );
+        return;
+      }
+
+      // 6. Live Deep Research Endpoint
+      if (req.method === 'POST' && pathname === '/api/deep-research') {
+        const body = await this.parseJsonBody<{ query?: string; forceLive?: boolean }>(req);
+        const query = body.query?.trim();
+
+        if (!query) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing query parameter' }));
+          return;
+        }
+
+        const startTime = Date.now();
+        let report: DeepResearchReport | null = null;
+        let citations: SourceCitation[] = [];
+        let isFromCache = false;
+
+        if (!body.forceLive) {
+          const cached = this.cacheService.getGeneric<{ report: DeepResearchReport; citations: SourceCitation[] }>(
+            query,
+            'deep_research'
+          );
+          if (cached) {
+            report = cached.data.report;
+            citations = cached.data.citations;
+            isFromCache = true;
+          }
+        }
+
+        if (!isFromCache) {
+          const result = await this.deepResearchOrchestrator.conductDeepResearch(query);
+          report = result.report;
+          citations = result.citations;
+          if (report && citations.length > 0) {
+            this.cacheService.setGeneric(query, 'deep_research', { report, citations });
+          }
+        }
+
+        const durationMs = Date.now() - startTime;
+        const provenance: SourceProvenanceType = isFromCache
+          ? 'cached'
+          : citations.length > 0
+          ? 'live'
+          : 'unavailable';
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            success: true,
+            report,
+            citations,
+            provenance,
+            durationMs,
+          })
+        );
+        return;
+      }
+
+      // 7. Companion Status Probe (Honest socket detection on localhost:5892)
       if (req.method === 'GET' && pathname === '/api/companion/status') {
         const probeResult = await this.companionProbe.probePort(5892);
         res.writeHead(200, { 'Content-Type': 'application/json' });
