@@ -83,20 +83,33 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({ data }) => {
 
         {/* Product Selector Tabs */}
         <div className="flex flex-wrap gap-2 mt-5">
-          {data.products.map((prod) => (
-            <button
-              key={prod.id}
-              onClick={() => setSelectedProductId(prod.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                selectedProductId === prod.id
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'liquid-pill text-zinc-800 dark:text-zinc-200'
-              }`}
-            >
-              <span>{prod.brand} {prod.name.split(' ')[1]}</span>
-              <span className="font-mono text-[11px] opacity-90">{prod.price.formatted}</span>
-            </button>
-          ))}
+          {data.products.map((prod) => {
+            // Clean model label to avoid duplicate words (e.g. "Anker Soundcore Space One" instead of "Anker Soundcore Soundcore")
+            let tabLabel = prod.name;
+            if (prod.name.toLowerCase().startsWith(prod.brand.toLowerCase())) {
+              const withoutBrand = prod.name.slice(prod.brand.length).trim();
+              const cleaned = withoutBrand.replace(/\s+(ANC|Wireless|Headphones|Noise Cancelling).*$/i, '').trim();
+              tabLabel = `${prod.brand} ${cleaned || withoutBrand.split(' ')[0]}`;
+            } else {
+              const model = prod.modelVariant?.split('(')[0]?.trim();
+              tabLabel = model ? `${prod.brand} ${model}` : `${prod.brand} ${prod.name.split(' ')[1] || prod.name}`;
+            }
+
+            return (
+              <button
+                key={prod.id}
+                onClick={() => setSelectedProductId(prod.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  selectedProductId === prod.id
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'liquid-pill text-zinc-800 dark:text-zinc-200'
+                }`}
+              >
+                <span>{tabLabel}</span>
+                <span className="font-mono text-[11px] opacity-90">{prod.price.formatted}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

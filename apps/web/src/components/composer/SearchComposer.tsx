@@ -63,10 +63,11 @@ export const SearchComposer: React.FC<SearchComposerProps> = ({ compact = false 
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      const newHeight = Math.max(28, Math.min(textareaRef.current.scrollHeight, 140));
+      const maxHeight = compact ? 52 : 140;
+      const newHeight = Math.max(28, Math.min(textareaRef.current.scrollHeight, maxHeight));
       textareaRef.current.style.height = `${newHeight}px`;
     }
-  }, [query]);
+  }, [query, compact]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -121,7 +122,7 @@ export const SearchComposer: React.FC<SearchComposerProps> = ({ compact = false 
   };
 
   return (
-    <div className={`w-full relative transition-all duration-300 ${compact ? 'max-w-2xl' : 'max-w-3xl mx-auto'}`}>
+    <div className={`w-full relative transition-all duration-300 ${compact ? 'max-w-full' : 'max-w-3xl mx-auto'}`}>
       {/* Intent Workflow Indicator (Above Composer) */}
       {liveIntent && !compact && liveIntent.detectedMode !== 'search' && (
         <div className="flex items-center justify-between px-3 py-1 mb-2 animate-fade-in">
@@ -153,13 +154,15 @@ export const SearchComposer: React.FC<SearchComposerProps> = ({ compact = false 
         className={`liquid-composer cursor-text transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative ${
           showPills
             ? 'rounded-[24px] p-3 sm:p-3.5 shadow-xl'
+            : compact
+            ? 'rounded-2xl py-2 px-3.5 sm:px-4 shadow-sm hover:shadow-md'
             : 'rounded-full py-1.5 px-3 sm:px-4 shadow-md hover:shadow-lg'
         } ${isLoading ? 'liquid-searching' : ''}`}
       >
         <form onSubmit={handleSubmit} className="relative z-10 w-full flex flex-col">
           {/* Main Input Row: Single Persistent Textarea (No Unmounting!) */}
           <div className="flex items-center gap-2 w-full min-h-[34px]">
-            <div className="flex-1 min-w-0 flex items-center pl-1 sm:pl-1.5">
+            <div className="flex-1 min-w-[140px] flex items-center pl-1 sm:pl-1.5">
               <textarea
                 ref={textareaRef}
                 rows={1}

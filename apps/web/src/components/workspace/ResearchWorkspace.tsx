@@ -55,21 +55,22 @@ export const ResearchWorkspace: React.FC = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in">
-      {/* Top Controls: Compact Composer & Quick Mode Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
-        <div className="flex-1 max-w-2xl">
+      {/* Top Controls: Full-width Search Bar & Sleek Mode Switcher Rail */}
+      <div className="flex flex-col gap-3 pb-1">
+        {/* Full-width Search Bar with proper breathing room */}
+        <div className="w-full">
           <SearchComposer compact />
         </div>
 
-        {/* Quick Mode Switcher Pills with changeMode action */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+        {/* Quick Mode Switcher Pills Rail */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar pt-0.5">
           {modeTabs.map((tab) => {
             const isActive = mode === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => changeMode(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 shadow-sm font-semibold'
                     : 'liquid-pill text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white'
