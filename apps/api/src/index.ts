@@ -11,8 +11,9 @@ export * from './server.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-// Auto-start server when run directly
-if (typeof process !== 'undefined' && process.argv && (process.argv[1]?.includes('dist/index') || process.argv[1]?.includes('src/index'))) {
+// Auto-start server when run directly (cross-platform path check)
+const scriptPath = (process.argv?.[1] || '').replace(/\\/g, '/');
+if (scriptPath.includes('dist/index') || scriptPath.includes('src/index')) {
   const apiServer = new ApiServer();
   apiServer.listen(PORT, () => {
     console.log(`[Aura API] Research Orchestration & Search Server listening on http://localhost:${PORT}`);
