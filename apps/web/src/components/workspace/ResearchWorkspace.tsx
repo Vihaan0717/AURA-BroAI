@@ -11,6 +11,7 @@ import { ImagesView } from '../modes/ImagesView';
 import { ChatView } from '../modes/ChatView';
 import { RemoteCompanionView } from '../modes/RemoteCompanionView';
 import { PrivacySettingsView } from '../modes/PrivacySettingsView';
+import { DeepResearchView } from '../modes/DeepResearchView';
 import {
   Search,
   Sparkles,
@@ -20,15 +21,20 @@ import {
   MessageSquare,
   Laptop,
   ShieldCheck,
+  ArrowRight,
+  Info,
 } from 'lucide-react';
 import { SearchMode } from '@private-browser/shared';
 
 export const ResearchWorkspace: React.FC = () => {
   const {
     mode,
-    setMode,
+    changeMode,
     isLoading,
+    intent,
+    continuationNotice,
     searchResult,
+    deepResearchResult,
     shoppingResult,
     entertainmentResult,
     imageResults,
@@ -55,14 +61,14 @@ export const ResearchWorkspace: React.FC = () => {
           <SearchComposer compact />
         </div>
 
-        {/* Quick Mode Switcher Pills */}
+        {/* Quick Mode Switcher Pills with changeMode action */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
           {modeTabs.map((tab) => {
             const isActive = mode === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setMode(tab.id)}
+                onClick={() => changeMode(tab.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 shadow-sm font-semibold'
@@ -77,10 +83,41 @@ export const ResearchWorkspace: React.FC = () => {
         </div>
       </div>
 
+      {/* Continuation Notice (e.g. Battery Life after Headphones comparison) */}
+      {continuationNotice && (
+        <div className="p-3 rounded-2xl liquid-card flex items-center gap-2.5 text-xs border-emerald-500/30 bg-emerald-500/10 animate-fade-in">
+          <Info className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+          <span className="text-zinc-800 dark:text-zinc-200 font-medium">{continuationNotice}</span>
+        </div>
+      )}
+
+      {/* Medium-Confidence Compact Mode Suggestion Banner (Section 3 Policy) */}
+      {intent?.confidenceLevel === 'medium' &&
+        intent.suggestedAlternativeMode &&
+        intent.suggestedAlternativeMode !== mode && (
+          <div className="p-3 rounded-2xl liquid-card flex items-center justify-between gap-3 text-xs border-amber-500/30 bg-amber-500/5 animate-fade-in">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <span className="text-zinc-800 dark:text-zinc-200 truncate">
+                Aura detected potential{' '}
+                <strong className="capitalize">{intent.suggestedAlternativeMode.replace('_', ' ')}</strong>{' '}
+                intent for this query.
+              </span>
+            </div>
+            <button
+              onClick={() => changeMode(intent.suggestedAlternativeMode!)}
+              className="flex items-center gap-1 px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-800 dark:text-amber-300 font-semibold text-xs transition-all flex-shrink-0"
+            >
+              <span>Switch Mode</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
       {/* Query Refinement Banner */}
       <QueryRefinementBanner />
 
-      {/* Signature Liquid Glassmorphism Synthesizing Animation (Image 4 / Image 5) */}
+      {/* Signature Liquid Glassmorphism Synthesizing Animation */}
       {isLoading ? (
         <div className="space-y-6 animate-fade-in">
           {/* Main Liquid Glass Synthesizer Card */}
@@ -184,7 +221,11 @@ export const ResearchWorkspace: React.FC = () => {
             <PrivacySettingsView />
           )}
 
-          {(mode === 'search' || mode === 'deep_research') && searchResult && (
+          {mode === 'deep_research' && deepResearchResult && (
+            <DeepResearchView report={deepResearchResult} />
+          )}
+
+          {(mode === 'search' || (mode === 'deep_research' && !deepResearchResult)) && searchResult && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               {/* Left 2 Columns: Answer & Epistemic Evidence */}
               <div className="lg:col-span-2 space-y-6">

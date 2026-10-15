@@ -3,6 +3,7 @@
  */
 
 export type SearchMode =
+  | 'auto'
   | 'search'
   | 'deep_research'
   | 'shopping'
@@ -33,20 +34,98 @@ export interface EvidenceSummary {
   confidenceNotes?: string;
 }
 
+export interface ExtractedConstraints {
+  brands?: string[];
+  models?: string[];
+  budget?: { amount: number; currency: 'INR' | 'USD' | 'EUR' | string };
+  location?: string;
+  features?: string[];
+  datesOrYear?: string[];
+  technicalTerms?: string[];
+  exclusions?: string[];
+  requestedResultCount?: number;
+  personalPreferences?: string[];
+}
+
 export interface QueryIntent {
   originalQuery: string;
   refinedQuery: string;
   detectedMode: SearchMode;
-  confidence: number;
+  confidenceScore: number; // 0 to 1
+  confidenceLevel: 'high' | 'medium' | 'low';
+  confidence?: 'high' | 'medium' | 'low' | number; // Backwards compatibility
   reasoning: string;
-  preservedConstraints: {
-    brands?: string[];
-    models?: string[];
-    budget?: { amount: number; currency: string };
-    datesOrYear?: string[];
-    technicalTerms?: string[];
-    exclusions?: string[];
+  routingState: 'auto' | 'explicit' | 'contextual';
+  preservedConstraints: ExtractedConstraints;
+  suggestedAlternativeMode?: SearchMode;
+  ambiguitySignal?: boolean;
+  clarificationMessage?: string;
+  statedAssumption?: string;
+  requiredTools: string[];
+}
+
+export interface DeepResearchPlanStep {
+  id: string;
+  stepNumber?: number;
+  question: string;
+  focusArea?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  sourceCount?: number;
+  retrievedSourceCount?: number;
+  keyFinding?: string;
+}
+
+export interface DeepResearchReport {
+  id: string;
+  query: string;
+  refinedTopic?: string;
+  researchGoal?: string;
+  researchPlan?: DeepResearchPlanStep[];
+  plan?: DeepResearchPlanStep[];
+  executiveSummary: string;
+  keyFindings?: {
+    heading: string;
+    content: string;
+    citationIndices: number[];
+  }[];
+  corroboratedClaims?: {
+    claim: string;
+    supportingSourceIndices?: number[];
+    sources?: string[];
+    confidence?: 'established' | 'emerging' | 'debated';
+  }[];
+  conflictingEvidence?: {
+    pointOfConflict?: string;
+    issue?: string;
+    perspectiveA: { claim?: string; assertion?: string; sourceIndices?: number[]; source?: string };
+    perspectiveB: { claim?: string; assertion?: string; sourceIndices?: number[]; source?: string };
+    resolutionOrVerdict?: string;
+  }[];
+  evidenceMatrix?: {
+    corroboratedClaims: {
+      claim: string;
+      sources: string[];
+      confidence: 'established' | 'emerging' | 'debated';
+    }[];
+    conflictingEvidence: {
+      issue: string;
+      perspectiveA: { assertion: string; source: string };
+      perspectiveB: { assertion: string; source: string };
+      resolutionOrVerdict: string;
+    }[];
   };
+  researchGaps?: string[];
+  identifiedGaps?: string[];
+  citations?: SourceCitation[];
+  sourcesRetrieved?: {
+    id: string;
+    title: string;
+    url: string;
+    domain: string;
+    snippet: string;
+    relevanceScore: number;
+  }[];
+  limitationsDisclaimer?: string;
 }
 
 export interface SearchResultPayload {
@@ -62,6 +141,7 @@ export interface SearchResultPayload {
   followUpSuggestions: string[];
   retrievalTimestamp: string;
   processingDurationMs: number;
+  deepResearchReport?: DeepResearchReport;
 }
 
 // Shopping Domain Types
@@ -108,6 +188,7 @@ export interface ProductAttributeComparison {
     keyTradeOffs: string[];
     preferredRetailerChoice: string;
     unverifiedAttributes: string[];
+    recommendationCategory?: 'best_overall' | 'best_value' | 'best_durability' | 'alternative';
   };
 }
 
@@ -119,6 +200,8 @@ export interface ShoppingResultPayload {
   comparisonSummary: string;
   budgetFit: string;
   citations: SourceCitation[];
+  extractedConstraints?: ExtractedConstraints;
+  contextualNote?: string;
 }
 
 // Entertainment Domain Types
@@ -240,4 +323,23 @@ export interface PrivacySettings {
   cookieHandling: 'strict_isolate' | 'block_third_party' | 'essential_only';
   aiProcessingMode: 'cloud_confidential' | 'hybrid' | 'local_model';
   autoPurgeHistoryDays: number;
+}
+
+// Mode Metadata
+export interface ModeDefinition {
+  id: SearchMode;
+  displayName: string;
+  shortDescription: string;
+  category: 'research' | 'assistant' | 'specialized' | 'device' | 'system';
+  typicalIntents: string[];
+  activationRules: string[];
+  expectedInput: string;
+  availableTools: string[];
+  outputFormat: string;
+  requiredPermissions: string[];
+  loadingStateText: string;
+  errorStateText: string;
+  emptyStateText: string;
+  requiresWebAccess: boolean;
+  canPerformSideEffects: boolean;
 }

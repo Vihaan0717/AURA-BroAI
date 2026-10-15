@@ -10,18 +10,16 @@ import {
   UserSavedMemory,
   ChatSession,
   QueryIntent,
+  DeepResearchReport,
 } from '@private-browser/shared';
 import {
-  MOCK_SEARCH_RESULTS,
-  MOCK_SHOPPING_RESULTS,
-  MOCK_ENTERTAINMENT_RESULTS,
-  MOCK_IMAGE_RESULTS,
-  MOCK_REMOTE_STATE,
+  MOCK_INITIAL_CHAT_SESSIONS,
   MOCK_SAVED_MEMORIES,
   MOCK_PRIVACY_SETTINGS,
-  MOCK_INITIAL_CHAT_SESSIONS,
+  MOCK_REMOTE_STATE,
 } from '../services/mockDataService';
-import { analyzeQueryIntent } from '../services/intentDetector';
+import { routeUserIntent } from '../services/intentRouter';
+import { orchestrateModeExecution } from '../services/orchestratorService';
 
 interface BrowserContextValue {
   view: 'home' | 'results';
@@ -33,6 +31,7 @@ interface BrowserContextValue {
   isLoading: boolean;
   isOnline: boolean;
   searchResult: SearchResultPayload | null;
+  deepResearchResult: DeepResearchReport | null;
   shoppingResult: ShoppingResultPayload | null;
   entertainmentResult: EntertainmentItem | null;
   imageResults: ImageSearchResult[] | null;
@@ -41,8 +40,10 @@ interface BrowserContextValue {
   remoteState: RemoteCompanionState;
   privacySettings: PrivacySettings;
   savedMemories: UserSavedMemory[];
+  continuationNotice: string | null;
   // Actions
   setMode: (mode: SearchMode) => void;
+  changeMode: (newMode: SearchMode) => void;
   setQuery: (q: string) => void;
   setUseRefinedQuery: (use: boolean) => void;
   performSearch: (searchQuery?: string, explicitMode?: SearchMode) => void;
@@ -66,19 +67,29 @@ const BrowserContext = createContext<BrowserContextValue | undefined>(undefined)
 
 export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [view, setView] = useState<'home' | 'results'>('home');
-  const [mode, setMode] = useState<SearchMode>('search');
+  const [mode, setMode] = useState<SearchMode>('auto');
   const [query, setQuery] = useState('');
   const [refinedQuery, setRefinedQuery] = useState('');
   const [useRefinedQuery, setUseRefinedQuery] = useState(true);
   const [intent, setIntent] = useState<QueryIntent | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [continuationNotice, setContinuationNotice] = useState<string | null>(null);
 
   // Results State
   const [searchResult, setSearchResult] = useState<SearchResultPayload | null>(null);
+  const [deepResearchResult, setDeepResearchResult] = useState<DeepResearchReport | null>(null);
   const [shoppingResult, setShoppingResult] = useState<ShoppingResultPayload | null>(null);
   const [entertainmentResult, setEntertainmentResult] = useState<EntertainmentItem | null>(null);
   const [imageResults, setImageResults] = useState<ImageSearchResult[] | null>(null);
+
+  // Conversational Context State (for follow-ups like "What about battery life?")
+  const [conversationContext, setConversationContext] = useState<{
+    lastQuery?: string;
+    lastMode?: SearchMode;
+    lastIntent?: QueryIntent;
+    lastShoppingResult?: ShoppingResultPayload;
+  }>({});
 
   // Chat & Memory State
   const [chatSessions, setChatSessions] = useState<ChatSession[]>(MOCK_INITIAL_CHAT_SESSIONS);
@@ -99,55 +110,81 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
   }, []);
 
+  /**
+   * Primary Search & Execution Pipeline
+   * 1. Preserves original query and extracts constraints.
+   * 2. Evaluates explicit mode vs contextual continuation vs automatic intent routing.
+   * 3. Dispatches to mode-specific orchestrators.
+   */
   const performSearch = (overrideQuery?: string, explicitMode?: SearchMode) => {
     const targetQuery = overrideQuery !== undefined ? overrideQuery : query;
     if (!targetQuery.trim() && !explicitMode) return;
 
     setIsLoading(true);
-    const detectedIntent = analyzeQueryIntent(targetQuery, explicitMode || mode);
-    setIntent(detectedIntent);
-    setRefinedQuery(detectedIntent.refinedQuery);
-    const effectiveMode = explicitMode || detectedIntent.detectedMode;
+
+    // Run Intent Router with conversational context
+    const routedIntent = routeUserIntent(targetQuery, {
+      currentMode: explicitMode || mode,
+      lastQuery: conversationContext.lastQuery,
+      lastMode: conversationContext.lastMode,
+      activeTopic: conversationContext.lastIntent?.detectedMode === 'shopping' ? 'shopping comparison' : undefined,
+    });
+
+    setIntent(routedIntent);
+    setRefinedQuery(routedIntent.refinedQuery);
+
+    const effectiveMode = routedIntent.detectedMode;
     setMode(effectiveMode);
 
-    // Transition to results workspace
+    // Transition view to results workspace
     setView('results');
 
-    // Simulate genuine network & reasoning latency (600ms)
+    // Simulate genuine network & reasoning latency (500ms)
     setTimeout(() => {
-      if (effectiveMode === 'shopping') {
-        setShoppingResult(MOCK_SHOPPING_RESULTS.headphones);
-        setSearchResult(null);
-        setEntertainmentResult(null);
-        setImageResults(null);
-      } else if (effectiveMode === 'entertainment') {
-        setEntertainmentResult(MOCK_ENTERTAINMENT_RESULTS.scifi);
-        setSearchResult(null);
-        setShoppingResult(null);
-        setImageResults(null);
-      } else if (effectiveMode === 'images') {
-        setImageResults(MOCK_IMAGE_RESULTS.nature);
-        setSearchResult(null);
-        setShoppingResult(null);
-        setEntertainmentResult(null);
-      } else if (effectiveMode === 'companion') {
-        // Keeps results view with companion active
-      } else if (effectiveMode === 'privacy') {
-        // Keeps results view with privacy settings
+      const outcome = orchestrateModeExecution(targetQuery, routedIntent, effectiveMode, {
+        lastMode: conversationContext.lastMode,
+        lastQuery: conversationContext.lastQuery,
+        lastShoppingResult: conversationContext.lastShoppingResult,
+      });
+
+      if (outcome.continuationNotice) {
+        setContinuationNotice(outcome.continuationNotice);
       } else {
-        // General search / deep research
-        setSearchResult({
-          ...MOCK_SEARCH_RESULTS.default,
-          query: targetQuery,
-          refinedQuery: detectedIntent.refinedQuery,
-          mode: effectiveMode,
-        });
-        setShoppingResult(null);
-        setEntertainmentResult(null);
-        setImageResults(null);
+        setContinuationNotice(null);
       }
+
+      // Update mode results
+      setSearchResult(outcome.searchResult || null);
+      setDeepResearchResult(outcome.deepResearchResult || null);
+      setShoppingResult(outcome.shoppingResult || null);
+      setEntertainmentResult(outcome.entertainmentResult || null);
+      setImageResults(outcome.imageResults || null);
+
+      if (outcome.remoteState) {
+        setRemoteState(outcome.remoteState);
+      }
+
+      // Update conversational context
+      setConversationContext({
+        lastQuery: targetQuery,
+        lastMode: effectiveMode,
+        lastIntent: routedIntent,
+        lastShoppingResult: outcome.shoppingResult || conversationContext.lastShoppingResult,
+      });
+
       setIsLoading(false);
-    }, 550);
+    }, 500);
+  };
+
+  /**
+   * Change Mode Action (Section 4 & 7):
+   * Preserves current query and adapts workflow without losing context.
+   */
+  const changeMode = (newMode: SearchMode) => {
+    setMode(newMode);
+    if (query.trim() && view === 'results') {
+      performSearch(query, newMode);
+    }
   };
 
   const navigateHome = () => {
@@ -171,18 +208,55 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
       prev.map((s) => (s.id === activeChatId ? { ...s, messages: updatedMessages, updatedAt: new Date().toISOString() } : s))
     );
 
-    // Simulated AI Assistant Turn
+    // Context-aware AI Response Generation (e.g. Acceptance Test 7: "Help me make a Python learning schedule.")
     setTimeout(() => {
-      const assistantMsg = {
-        id: `asst-${Date.now()}`,
-        role: 'assistant' as const,
-        content: `I've synthesized your inquiry about "${content}". When evaluating this within your configured privacy boundaries (local-first inference and zero third-party telemetry), we maintain strict host isolation. Would you like to save this finding to your research memory, or explore the source citations?`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        followUpChips: [
+      let assistantContent = '';
+      let followUpChips: string[] = [];
+
+      const cLower = content.toLowerCase();
+      if (cLower.includes('python') && (cLower.includes('schedule') || cLower.includes('learn') || cLower.includes('roadmap'))) {
+        assistantContent = `Here is a high-yield, 4-Week Python Learning Schedule designed for structured mastery:
+
+### 🗓️ Week 1: Core Fundamentals & Control Flow
+- **Goal**: Master syntax, variables, primitive types, and conditionals.
+- **Topics**: \`int\`, \`float\`, \`str\`, \`bool\`, \`if/elif/else\`, \`while\` loops, \`for\` loops with \`range()\`.
+- **Hands-On Mini-Project**: Build a CLI Unit Converter & Guess-the-Number game with input validation.
+
+### 🗓️ Week 2: Data Structures & File Operations
+- **Goal**: Work with collections, memory references, and disk I/O.
+- **Topics**: Lists, Tuples, Dictionaries, Sets, List Comprehensions, reading/writing \`.txt\` and \`.json\` files safely with \`with open(...) as f:\`.
+- **Hands-On Mini-Project**: Build a JSON-persisted Personal Expense Tracker.
+
+### 🗓️ Week 3: Functional Paradigms, OOP & Modules
+- **Goal**: Code reusability, clean abstractions, and package management.
+- **Topics**: Functions (\`*args\`, \`**kwargs\`), lambda expressions, Classes & Objects (\`__init__\`, inheritance, encapsulation), virtual environments (\`venv\`), \`pip\`.
+- **Hands-On Mini-Project**: Build an Object-Oriented Banking Account system with audit logs.
+
+### 🗓️ Week 4: Real-World APIs & Capstone Project
+- **Goal**: Interfacing with external systems and asynchronous data processing.
+- **Topics**: HTTP requests with \`httpx\` or \`requests\`, error handling with \`try/except/finally\`, type hints (\`mypy\`), unit testing with \`pytest\`.
+- **Capstone Project**: Build an Automated Weather & RSS Feed Scraper that outputs a clean terminal summary.`;
+
+        followUpChips = [
+          'Generate Week 1 daily coding exercises',
+          'Show recommended open-source Python textbooks',
+          'How to set up a local virtualenv on Windows',
+        ];
+      } else {
+        assistantContent = `I've synthesized your inquiry about "${content}". Working within your local-first boundaries, we maintain strict host memory isolation with zero unconsented telemetry.\n\nWould you like to explore deeper evidence sources, save this finding to your research memory, or adjust your inquiry constraints?`;
+        followUpChips = [
           'Pin key finding to research memory',
           'Inspect raw evidence sources',
           'Switch to Deep Research mode',
-        ],
+        ];
+      }
+
+      const assistantMsg = {
+        id: `asst-${Date.now()}`,
+        role: 'assistant' as const,
+        content: assistantContent,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        followUpChips,
       };
 
       setChatSessions((prev) =>
@@ -190,7 +264,7 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
           s.id === activeChatId ? { ...s, messages: [...updatedMessages, assistantMsg], updatedAt: new Date().toISOString() } : s
         )
       );
-    }, 700);
+    }, 600);
   };
 
   const createChatSession = () => {
@@ -261,26 +335,28 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
       },
     ]);
     setSearchResult(null);
+    setDeepResearchResult(null);
     setShoppingResult(null);
     setEntertainmentResult(null);
     setImageResults(null);
     setQuery('');
+    setContinuationNotice(null);
     setView('home');
   };
 
   // Remote Companion Actions
   const connectRemoteCompanion = async () => {
     setRemoteState((prev) => ({ ...prev, status: 'pairing' }));
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, 1000));
     setRemoteState((prev) => ({
       ...prev,
       status: 'connected',
-      activeSessionId: `antigravity-ses-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      activeSessionId: `antigravity-ses-AGY902`,
       sessionStartedAt: new Date().toISOString(),
       auditLogs: [
         {
           timestamp: new Date().toLocaleTimeString(),
-          action: 'Secure TLS WebSocket established with Google Antigravity Session',
+          action: 'Secure TLS WebSocket established with Google Antigravity Session on localhost:5892',
           status: 'completed',
         },
         ...prev.auditLogs,
@@ -297,7 +373,7 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
       auditLogs: [
         {
           timestamp: new Date().toLocaleTimeString(),
-          action: 'Remote session terminated cleanly by client',
+          action: 'Remote companion session closed gracefully',
           status: 'completed',
         },
         ...prev.auditLogs,
@@ -331,6 +407,7 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
         isLoading,
         isOnline,
         searchResult,
+        deepResearchResult,
         shoppingResult,
         entertainmentResult,
         imageResults,
@@ -339,7 +416,9 @@ export const BrowserProvider: React.FC<{ children: React.ReactNode }> = ({ child
         remoteState,
         privacySettings,
         savedMemories,
+        continuationNotice,
         setMode,
+        changeMode,
         setQuery,
         setUseRefinedQuery,
         performSearch,

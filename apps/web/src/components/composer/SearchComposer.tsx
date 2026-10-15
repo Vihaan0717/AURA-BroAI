@@ -16,7 +16,7 @@ import {
   Laptop,
 } from 'lucide-react';
 import { SearchMode } from '@private-browser/shared';
-import { analyzeQueryIntent } from '../../services/intentDetector';
+import { routeUserIntent } from '../../services/intentRouter';
 
 interface SearchComposerProps {
   compact?: boolean;
@@ -32,8 +32,8 @@ export const SearchComposer: React.FC<SearchComposerProps> = ({ compact = false 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Live intent detection
-  const liveIntent = query.trim() ? analyzeQueryIntent(query) : null;
+  // Live intent detection with current mode context
+  const liveIntent = query.trim() ? routeUserIntent(query, { currentMode: mode }) : null;
 
   // Show tools, +, normal, gemini only when focused or when query has text (on home screen) or tools open
   const showPills = compact
