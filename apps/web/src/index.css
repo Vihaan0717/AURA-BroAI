@@ -1,0 +1,383 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Liquid Glassmorphism & Adaptive Themes */
+:root {
+  /* LIGHT THEME (Reference Image 4 Pastel Liquid Glass) */
+  --bg-page: #f2e9f0;
+  --text-main: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  
+  /* Liquid Glass Composer (Light) */
+  --liquid-glass-bg: rgba(255, 255, 255, 0.48);
+  --liquid-glass-border: rgba(255, 255, 255, 0.7);
+  --liquid-glass-inner-highlight: rgba(255, 255, 255, 0.95);
+  --liquid-glass-shadow: 0 24px 50px -10px rgba(118, 93, 142, 0.2), 0 10px 20px -5px rgba(0, 0, 0, 0.05);
+  
+  /* Liquid Pills (Light) */
+  --liquid-pill-bg: rgba(255, 255, 255, 0.65);
+  --liquid-pill-bg-hover: rgba(255, 255, 255, 0.88);
+  --liquid-pill-border: rgba(255, 255, 255, 0.85);
+  --liquid-pill-text: #1f2937;
+  --liquid-pill-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+  /* Submit Button (Light) */
+  --submit-btn-bg: #111827;
+  --submit-btn-text: #ffffff;
+
+  /* Card Glass (Light) */
+  --liquid-card-bg: rgba(255, 255, 255, 0.65);
+  --liquid-card-border: rgba(255, 255, 255, 0.8);
+  --liquid-card-shadow: 0 16px 36px -10px rgba(120, 100, 150, 0.12);
+
+  /* Header Surface (Light) */
+  --header-bg: rgba(255, 255, 255, 0.6);
+  --header-border: rgba(255, 255, 255, 0.75);
+
+  --accent-color: #0d946f;
+  --accent-bg: rgba(13, 148, 111, 0.12);
+}
+
+.dark {
+  /* DARK THEME (Reference Image 5 Deep Pine Liquid Glass) */
+  --bg-page: #06140f;
+  --text-main: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  /* Liquid Glass Composer (Dark) */
+  --liquid-glass-bg: rgba(16, 42, 33, 0.58);
+  --liquid-glass-border: rgba(255, 255, 255, 0.12);
+  --liquid-glass-inner-highlight: rgba(255, 255, 255, 0.14);
+  --liquid-glass-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.16);
+
+  /* Liquid Pills (Dark) */
+  --liquid-pill-bg: rgba(255, 255, 255, 0.08);
+  --liquid-pill-bg-hover: rgba(255, 255, 255, 0.15);
+  --liquid-pill-border: rgba(255, 255, 255, 0.12);
+  --liquid-pill-text: #f3f4f6;
+  --liquid-pill-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+  /* Submit Button (Dark) */
+  --submit-btn-bg: #ffffff;
+  --submit-btn-text: #06140f;
+
+  /* Card Glass (Dark) */
+  --liquid-card-bg: rgba(13, 36, 28, 0.55);
+  --liquid-card-border: rgba(255, 255, 255, 0.08);
+  --liquid-card-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.45);
+
+  /* Header Surface (Dark) */
+  --header-bg: rgba(9, 25, 19, 0.72);
+  --header-border: rgba(255, 255, 255, 0.07);
+
+  --accent-color: #57e5bd;
+  --accent-bg: rgba(87, 229, 189, 0.15);
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Background Atmosphere (Exact Image 4 Pastel Gradient in Light Mode) */
+html:not(.dark) body {
+  background-image:
+    linear-gradient(135deg, #d3b4e6 0%, #f6c0c2 35%, #edd2c0 70%, #c4b5fd 100%);
+  background-attachment: fixed;
+}
+
+/* Background Atmosphere (Exact Image 5 Forest Green Pine in Dark Mode) */
+.dark body {
+  background-image:
+    radial-gradient(circle 900px at 50% -120px, rgba(16, 75, 58, 0.45), transparent 75%),
+    radial-gradient(circle 700px at 15% 40%, rgba(9, 44, 34, 0.5), transparent 70%),
+    radial-gradient(circle 800px at 85% 60%, rgba(12, 54, 42, 0.45), transparent 70%),
+    radial-gradient(circle 600px at 50% 90%, rgba(6, 30, 23, 0.7), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* Typography styles matching Image 2 */
+.font-display {
+  font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+
+.font-script {
+  font-family: 'Caveat', cursive, Georgia, serif;
+}
+
+/* Subtle Reference Image 2 Dot Grid */
+.dot-grid-pattern {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.065) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+
+.dark .dot-grid-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+
+/* Exact Reference Image 4 Liquid Glassmorphism Composer */
+.liquid-composer {
+  background: var(--liquid-glass-bg);
+  backdrop-filter: blur(45px) saturate(190%);
+  -webkit-backdrop-filter: blur(45px) saturate(190%);
+  border: 1px solid var(--liquid-glass-border);
+  box-shadow: 
+    var(--liquid-glass-shadow),
+    inset 0 1px 1px 0 var(--liquid-glass-inner-highlight);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-composer:hover {
+  box-shadow: 
+    0 28px 60px -10px rgba(110, 85, 140, 0.25),
+    inset 0 1px 2px 0 var(--liquid-glass-inner-highlight);
+}
+
+.dark .liquid-composer:hover {
+  box-shadow: 
+    0 32px 65px -12px rgba(0, 0, 0, 0.7),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.liquid-composer:focus-within {
+  box-shadow: 
+    0 32px 64px -10px rgba(110, 85, 140, 0.3),
+    0 0 0 2px var(--accent-color),
+    inset 0 1px 2px 0 var(--liquid-glass-inner-highlight);
+}
+
+/* Exact Reference Image 4 Liquid Glass Pills */
+.liquid-pill {
+  background: var(--liquid-pill-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--liquid-pill-border);
+  color: var(--liquid-pill-text);
+  box-shadow: var(--liquid-pill-shadow);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-pill:hover {
+  background: var(--liquid-pill-bg-hover);
+  transform: translateY(-1px);
+}
+
+.liquid-pill:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Exact Reference Image 4 Circular Submit Arrow Button */
+.liquid-submit-btn {
+  background: var(--submit-btn-bg);
+  color: var(--submit-btn-text);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-submit-btn:hover:not(:disabled) {
+  transform: scale(1.06);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.liquid-submit-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Liquid Glass Cards */
+.liquid-card {
+  background: var(--liquid-card-bg);
+  backdrop-filter: blur(35px) saturate(180%);
+  -webkit-backdrop-filter: blur(35px) saturate(180%);
+  border: 1px solid var(--liquid-card-border);
+  box-shadow: var(--liquid-card-shadow);
+  color: var(--text-main);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Liquid Header */
+.liquid-header {
+  background: var(--header-bg);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  border-bottom: 1px solid var(--header-border);
+}
+
+/* Liquid Popover Menu (Exact match to Reference Image 4) */
+.liquid-menu {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(40px) saturate(190%);
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 60px -10px rgba(110, 85, 140, 0.25), 0 10px 20px -5px rgba(0, 0, 0, 0.08);
+  color: #111827;
+}
+
+.dark .liquid-menu {
+  background: rgba(13, 38, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px -10px rgba(0, 0, 0, 0.65);
+  color: #f9fafb;
+}
+
+/* Liquid Active Searching State (Caustic Refraction Wave) */
+.liquid-searching {
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-searching::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.5) 60deg,
+    rgba(167, 139, 250, 0.5) 120deg,
+    rgba(244, 114, 182, 0.4) 180deg,
+    rgba(52, 211, 153, 0.5) 240deg,
+    transparent 360deg
+  );
+  animation: liquid-rotate 3.5s linear infinite;
+  opacity: 0.38;
+  pointer-events: none;
+  filter: blur(30px);
+}
+
+.dark .liquid-searching::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(52, 211, 153, 0.45) 90deg,
+    rgba(45, 212, 191, 0.6) 180deg,
+    rgba(147, 197, 253, 0.4) 270deg,
+    transparent 360deg
+  );
+  opacity: 0.32;
+}
+
+@keyframes liquid-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes liquid-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.02);
+  }
+}
+
+.animate-liquid-float {
+  animation: liquid-float 3.5s ease-in-out infinite;
+}
+
+/* Gen Z Rolling Word Animation with zero glyph clipping */
+@keyframes word-scroll-up {
+  0% {
+    transform: translateY(16px);
+    opacity: 0;
+    filter: blur(2px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+.animate-word-scroll-up {
+  display: inline-block;
+  animation: word-scroll-up 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  vertical-align: baseline;
+  padding: 0 2px;
+}
+
+/* Liquid Skeleton Shimmer */
+.liquid-skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 30%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0.4) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: liquid-shimmer 2.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .liquid-skeleton-shimmer::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(52, 211, 153, 0.08) 25%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(52, 211, 153, 0.08) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@keyframes liquid-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* High Contrast Global Text Helpers */
+.text-main {
+  color: var(--text-main) !important;
+}
+
+.text-sub {
+  color: var(--text-secondary) !important;
+}
+
+.text-muted-custom {
+  color: var(--text-muted) !important;
+}
+
+/* Focus Visible */
+*:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
